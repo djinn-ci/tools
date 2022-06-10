@@ -59,11 +59,6 @@ trap cleanup_arch EXIT
 
 sfdisk -d /dev/vda | sfdisk "$nbd_dev"
 
-#parted "$nbd_dev" mklabel msdos
-#parted "$nbd_dev" mkpart primary linux-swap 1MiB 2MiB
-#parted "$nbd_dev" mkpart primary ext4 2MiB 100%
-#parted "$nbd_dev" set 2 boot on
-
 mkswap /dev/nbd0p1
 mkfs.ext4 /dev/nbd0p2
 
