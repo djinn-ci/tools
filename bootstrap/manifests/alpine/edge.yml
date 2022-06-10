@@ -1,0 +1,14 @@
+driver:
+  type: qemu
+  image: alpine/edge
+objects:
+- bootstrap-alpine.sh
+- util.sh
+stages:
+- bootstrap
+jobs:
+- stage: bootstrap
+  commands:
+  - ./bootstrap-alpine.sh
+  artifacts:
+  - alpine => alpine/edge

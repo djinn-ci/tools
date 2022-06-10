@@ -1,0 +1,16 @@
+driver:
+  type: qemu
+  image: debian/bookworm
+objects:
+- bootstrap-debian.sh
+- util.sh
+env:
+- CODENAME=stable
+stages:
+- bootstrap
+jobs:
+- stage: bootstrap
+  commands:
+  - ./bootstrap-debian.sh
+  artifacts:
+  - debian => debian/11

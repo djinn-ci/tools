@@ -1,0 +1,25 @@
+#!/bin/sh
+
+daemons="djinn-consumer
+djinn-curator
+djinn-imgsrv
+djinn-scheduler
+djinn-server
+djinn-worker"
+
+[ -z "$PS_FORMAT" ] && {
+	export PS_FORMAT="pid=pid,user=user,cmd:60=cmd,rss=rss(kb),etime=uptime"
+}
+
+pids=""
+
+for p in $daemons; do
+	pid="$(pidof "$p")"
+
+	[ $? -ne 0 ] && continue
+	pids="$pids $pid"
+done
+
+[ -z "$pids" ] && exit 0
+
+ps $pids

@@ -1,0 +1,16 @@
+driver:
+  type: qemu
+  image: arch
+objects:
+- bootstrap-arch.sh
+- util.sh
+env:
+- COUNTRY=GB
+stages:
+- bootstrap
+jobs:
+- stage: bootstrap
+  commands:
+  - ./bootstrap-arch.sh
+  artifacts:
+  - arch
