@@ -2,17 +2,22 @@ package internal
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"strings"
 )
 
 var envfile = "/etc/default/djinn"
 
+func loadEnvError(err error) error {
+	return errors.New("could not load environment: " + err.Error())
+}
+
 func LoadEnv() error {
 	f, err := os.Open(envfile)
 
 	if err != nil {
-		return err
+		return loadEnvError(err)
 	}
 
 	defer f.Close()
@@ -36,7 +41,7 @@ func LoadEnv() error {
 	}
 
 	if err := sc.Err(); err != nil {
-		return err
+		return loadEnvError(err)
 	}
 	return nil
 }
