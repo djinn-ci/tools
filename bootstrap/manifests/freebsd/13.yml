@@ -1,0 +1,15 @@
+driver:
+  type: qemu
+  image: freebsd/13
+objects:
+- bootstrap-freebsd.sh
+env:
+- RELEASE=13.1-RELEASE
+stages:
+- bootstrap
+jobs:
+- stage: bootstrap
+  commands:
+  - ./bootstrap-freebsd.sh
+  artifacts:
+  - freebsd => freebsd/13

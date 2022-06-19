@@ -1,0 +1,15 @@
+driver:
+  type: qemu
+  image: freebsd/12
+objects:
+- bootstrap-freebsd.sh
+env:
+- RELEASE=12.3-RELEASE
+stages:
+- bootstrap
+jobs:
+- stage: bootstrap
+  commands:
+  - ./bootstrap-freebsd.sh
+  artifacts:
+  - freebsd => freebsd/12
