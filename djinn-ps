@@ -8,7 +8,7 @@ djinn-server
 djinn-worker"
 
 [ -z "$PS_FORMAT" ] && {
-	export PS_FORMAT="pid=pid,user=user,cmd:60=cmd,rss=rss(kb),etime=uptime"
+	export PS_FORMAT="pid=pid,ppid=ppid,user=user,cmd:60=cmd,rss=rss(kb),etime=uptime"
 }
 
 pids=""
