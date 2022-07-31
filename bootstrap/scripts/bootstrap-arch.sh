@@ -67,6 +67,8 @@ mount "$nbd_dev"p2 /mnt
 swapon "$nbd_dev"p1
 
 cd /mnt && {
+	_pacman -Sy archlinux-keyring
+
 	pacstrap . base base-devel linux --noprogressbar
 
 	prepare_chroot .
