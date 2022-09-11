@@ -23,6 +23,9 @@ cleanup_debian() {
 
 debootstrap="debootstrap_1.0.123_all.deb"
 
+apt update --fix-missinng
+apt upgrade -y
+
 apt install -y qemu-utils
 
 wget https://deb.debian.org/debian/pool/main/d/debootstrap/"$debootstrap"
