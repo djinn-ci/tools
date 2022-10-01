@@ -6,6 +6,7 @@ objects:
 - util.sh
 env:
 - CODENAME=bookworm
+- DEBIAN_FRONTEND=noninteractive
 stages:
 - bootstrap
 jobs:

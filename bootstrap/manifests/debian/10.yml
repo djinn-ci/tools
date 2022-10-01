@@ -6,6 +6,7 @@ objects:
 - util.sh
 env:
 - CODENAME=oldstable
+- DEBIAN_FRONTEND=noninteractive
 stages:
 - bootstrap
 jobs:
