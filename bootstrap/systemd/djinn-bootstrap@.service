@@ -1,0 +1,13 @@
+
+
+[Unit]
+Description=Bootstrap Djinn CI %i images
+OnFailure=status-email@%n.service
+
+[Service]
+Type=oneshot
+User=djinn
+WorkingDirectory=/var/lib/djinn/bootstrap
+Environment=TMPDIR=/var/lib/djinn/tmp
+Environment=DJINN_IMAGE_DIR=/var/lib/djinn/images/_base
+ExecStart=/var/lib/djinn/bootstrap/qemu.sh /etc/djinn/bootstrap.conf %i

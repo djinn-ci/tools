@@ -1,7 +1,7 @@
 
 
 [Unit]
-Description=Weekly bootstrap of Djinn CI Alpine images
+Description=Weekly bootstrap of Djinn CI %i images
 
 [Timer]
 OnCalendar=Sun *-*-* 00:00:00
