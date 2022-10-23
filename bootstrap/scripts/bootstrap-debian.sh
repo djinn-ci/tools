@@ -21,14 +21,8 @@ cleanup_debian() {
 	cleanup_nbd
 }
 
-debootstrap="debootstrap_1.0.123_all.deb"
-
 apt update --fix-missinng
-apt install -y qemu-utils
-
-wget https://deb.debian.org/debian/pool/main/d/debootstrap/"$debootstrap"
-
-dpkg -i "$debootstrap"
+apt install -y debootstrap qemu-utils
 
 prepare_nbd debian
 
