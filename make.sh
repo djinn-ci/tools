@@ -15,7 +15,7 @@ build() {
 
 	for d in $(ls cmd); do
 		set -x
-		go build -ldflags "$ldflags" -tags netgo -o bin/"$d" ./cmd/"$d"
+		go build -ldflags "$ldflags" -tags "netgo osusergo" -o bin/"$d" ./cmd/"$d"
 		set +x
 	done
 }
