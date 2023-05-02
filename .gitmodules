@@ -1,0 +1,3 @@
+[submodule "djinn"]
+	path = djinn
+	url = https://github.com/djinn-ci/djinn
