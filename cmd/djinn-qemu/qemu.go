@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -56,6 +57,8 @@ type Version struct {
 type Monitor struct {
 	conn net.Conn
 
+	listeners *int32
+
 	stream chan streamResponse
 	events chan Event
 
@@ -71,9 +74,10 @@ func NewMonitor(network, addr string, timeout time.Duration) (*Monitor, error) {
 	}
 
 	return &Monitor{
-		conn:   conn,
-		stream: make(chan streamResponse),
-		events: make(chan Event),
+		conn:      conn,
+		listeners: new(int32),
+		stream:    make(chan streamResponse),
+		events:    make(chan Event),
 	}, nil
 }
 
@@ -99,7 +103,10 @@ func (m *Monitor) Command(cmd Command) error {
 	return nil
 }
 
-func (m *Monitor) Events() chan Event { return m.events }
+func (m *Monitor) Events() chan Event {
+	atomic.AddInt32(m.listeners, 1)
+	return m.events
+}
 
 func (m *Monitor) Connect() error {
 	var banner struct {
@@ -121,6 +128,9 @@ func (m *Monitor) Connect() error {
 	}
 
 	go func() {
+		defer close(m.stream)
+		defer close(m.events)
+
 		sc := bufio.NewScanner(m.conn)
 
 		for sc.Scan() {
@@ -136,6 +146,10 @@ func (m *Monitor) Connect() error {
 				m.stream <- streamResponse{buf: buf}
 				continue
 			}
+
+			if atomic.LoadInt32(m.listeners) == 0 {
+				continue
+			}
 			m.events <- ev
 		}
 
@@ -149,9 +163,6 @@ func (m *Monitor) Connect() error {
 
 func (m *Monitor) Close() error {
 	err := m.conn.Close()
-
-	close(m.stream)
-	close(m.events)
 
 	for range m.stream {}
 
@@ -251,7 +262,7 @@ func RunQEMU(disk string, mem, cpus int64) (*os.Process, string, int, error) {
 				buf.Reset()
 				continue
 			}
-			return nil, "", 0, err
+			return nil, "", 0, errors.New(buf.String())
 		}
 
 		b, err := os.ReadFile(pidfile.Name())

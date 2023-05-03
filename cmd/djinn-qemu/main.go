@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -18,30 +19,36 @@ import (
 	"djinn-ci.com/x/tools/internal"
 )
 
-func main() {
-	argv0 := os.Args[0]
+func run(ctx context.Context, args []string) error {
+	argv0 := args[0]
 
 	var (
-		handle  string
-		timeout string
+		handle    string
+		namespace string
+		timeout   string
+		verbose   bool
 	)
 
 	fs := flag.NewFlagSet(argv0, flag.ExitOnError)
 	fs.StringVar(&handle, "u", "", "the user the image belongs to, if any")
+	fs.StringVar(&namespace, "n", "", "the namespace the image is in")
 	fs.StringVar(&timeout, "t", "15", "the timeout for connecting to the machine")
-	fs.Parse(os.Args[1:])
+	fs.BoolVar(&verbose, "v", false, "turn on verbose output")
+	fs.Parse(args[1:])
 
-	args := fs.Args()
+	args = fs.Args()
 
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "usage: %s [-t timeout] [-u user] <image>\n", argv0)
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "usage: %s [-n namespace] [-u user] [-t timeout] [-v] <image>\n", argv0)
+		return errors.New("")
 	}
 
 	name := filepath.Join("_base", "qemu", "x86_64", args[0])
 
 	if handle != "" {
-		ctx := context.Background()
+		if err := internal.LoadEnv(); err != nil {
+			return err
+		}
 
 		db, err := internal.DetectAndConnectDatabase(ctx)
 
@@ -53,31 +60,39 @@ func main() {
 		u, ok, err := user.NewStore(db).Get(ctx, user.WhereHandle(handle))
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
-			os.Exit(1)
+			return err
 		}
 
 		if !ok {
-			fmt.Fprintf(os.Stderr, "%s: no such user %s\n", argv0, handle)
-			os.Exit(1)
+			return errors.New("no such user " + handle)
 		}
 
-		_, ok, err = image.NewStore(db).Get(
+		name = args[0]
+
+		i, ok, err := image.NewStore(db).Get(
 			ctx,
 			query.Where("user_id", "=", query.Arg(u.ID)),
+			func(q query.Query) query.Query {
+				if namespace == "" {
+					return q
+				}
+				return query.Where("namespace_id", "=", query.Select(
+					query.Columns("id"),
+					query.From("namespaces"),
+					query.Where("path", "=", query.Arg(namespace)),
+				))(q)
+			},
 			query.Where("name", "=", query.Arg(name)),
 		)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
-			os.Exit(1)
+			return err
 		}
 
 		if !ok {
-			fmt.Fprintf(os.Stderr, "%s: no such image %s\n", argv0, name)
-			os.Exit(1)
+			return err
 		}
-		name = filepath.Join(strconv.FormatInt(u.ID, 10), "qemu", name)
+		name = filepath.Join(strconv.FormatInt(u.ID, 10), "qemu", i.Hash)
 	}
 
 	var cfg struct {
@@ -91,18 +106,10 @@ func main() {
 	}
 
 	if err := internal.DecodeConfig(&cfg, filepath.Join(internal.ConfigDir, "driver.conf")); err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
-		os.Exit(1)
+		return err
 	}
 
-	name, err := Snapshot(filepath.Join(cfg.Driver.QEMU.Disks, name))
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
-		os.Exit(1)
-	}
-
-	defer os.Remove(name)
+	name = filepath.Join(cfg.Driver.QEMU.Disks, name)
 
 	fmt.Println("Created snapshot of image", args[0])
 	fmt.Println("Booting QEMU machine with image", args[0])
@@ -110,8 +117,7 @@ func main() {
 	proc, addr, port, err := RunQEMU(name, cfg.Driver.QEMU.Memory, cfg.Driver.QEMU.CPUs)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: failed to start qemu\n", argv0)
-		os.Exit(1)
+		return err
 	}
 
 	defer os.Remove(addr)
@@ -120,21 +126,26 @@ func main() {
 	mon, err := NewMonitor("unix", addr, time.Second * 10)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
-		os.Exit(1)
+		return err
 	}
 
 	defer mon.Close()
 
 	if err := mon.Connect(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
-		os.Exit(1)
+		return err
+	}
+
+	outputFlag := "-q"
+
+	if verbose {
+		outputFlag = "-v"
 	}
 
 	ssharg := []string{
-		"-q",
+		outputFlag,
 		"-o", "ConnectTimeout=" + timeout,
 		"-o", "UserKnownHostsFile=/dev/null",
+		"-o", "StrictHostKeyChecking=no",
 		"-p", strconv.Itoa(port),
 		"root@localhost",
 	}
@@ -146,30 +157,37 @@ func main() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
-		os.Exit(1)
-	}
+	err = cmd.Run()
+	code := cmd.ProcessState.ExitCode()
 
-	powerdown := Command{
-		Execute: "system_powerdown",
-	}
-
-	if err := mon.Command(powerdown); err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
-		os.Exit(1)
-	}
-
-	for ev := range mon.Events() {
-		if ev.Event == "SHUTDOWN" {
-			break
+	if code == 0 {
+		powerdown := Command{
+			Execute: "system_powerdown",
 		}
+
+		if err := mon.Command(powerdown); err != nil {
+			return err
+		}
+
+		fmt.Println("Powering down machine")
+
+		for ev := range mon.Events() {
+			if ev.Event == "SHUTDOWN" {
+				break
+			}
+		}
+		return nil
 	}
+	return nil
+}
 
-	time.Sleep(time.Second)
+func main() {
+	ctx := context.Background()
 
-	if err := Commit(name); err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", argv0, err)
+	if err := run(ctx, os.Args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", os.Args[0], err)
 		os.Exit(1)
 	}
+
+	fmt.Println("Done")
 }
