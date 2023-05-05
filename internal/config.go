@@ -18,12 +18,12 @@ var (
 
 	errNoConfig = errors.New("could not detect djinn configuration")
 
-	serverConfig = filepath.Join(ConfigDir, "/server.conf")
-	uiConfig = filepath.Join(ConfigDir, "/ui.conf")
-	apiConfig = filepath.Join(ConfigDir, "/api.conf")
-	workerConfig = filepath.Join(ConfigDir, "/worker.conf")
-	curatorConfig = filepath.Join(ConfigDir, "/curator.conf")
-	consumerConfig = filepath.Join(ConfigDir, "/consumer.conf")
+	serverConfig    = filepath.Join(ConfigDir, "/server.conf")
+	uiConfig        = filepath.Join(ConfigDir, "/ui.conf")
+	apiConfig       = filepath.Join(ConfigDir, "/api.conf")
+	workerConfig    = filepath.Join(ConfigDir, "/worker.conf")
+	curatorConfig   = filepath.Join(ConfigDir, "/curator.conf")
+	consumerConfig  = filepath.Join(ConfigDir, "/consumer.conf")
 	schedulerConfig = filepath.Join(ConfigDir, "/scheduler.conf")
 
 	configFiles = [...]string{

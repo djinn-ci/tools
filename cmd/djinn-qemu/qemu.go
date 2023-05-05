@@ -164,7 +164,8 @@ func (m *Monitor) Connect() error {
 func (m *Monitor) Close() error {
 	err := m.conn.Close()
 
-	for range m.stream {}
+	for range m.stream {
+	}
 
 	return err
 }

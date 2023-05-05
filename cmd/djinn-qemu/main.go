@@ -111,7 +111,6 @@ func run(ctx context.Context, args []string) error {
 
 	name = filepath.Join(cfg.Driver.QEMU.Disks, name)
 
-	fmt.Println("Created snapshot of image", args[0])
 	fmt.Println("Booting QEMU machine with image", args[0])
 
 	proc, addr, port, err := RunQEMU(name, cfg.Driver.QEMU.Memory, cfg.Driver.QEMU.CPUs)
@@ -123,7 +122,7 @@ func run(ctx context.Context, args []string) error {
 	defer os.Remove(addr)
 	defer proc.Kill()
 
-	mon, err := NewMonitor("unix", addr, time.Second * 10)
+	mon, err := NewMonitor("unix", addr, time.Second*10)
 
 	if err != nil {
 		return err
@@ -188,6 +187,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s: %s\n", os.Args[0], err)
 		os.Exit(1)
 	}
-
 	fmt.Println("Done")
 }
