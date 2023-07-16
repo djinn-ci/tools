@@ -81,7 +81,7 @@ cd /mnt && {
 	UUID=$swap_uuid  none            swap    defaults      0 0
 	EOF
 
-	cp /etc/hosts /etc/hostname /etc/resolv.conf etc
+	cp /etc/hosts /etc/hostname /etc/resolv.conf /etc/sudoers etc
 
 	curl -s "$mirrorlist" | sed 's/#Server/Server/' > etc/pacman.d/mirrorlist
 
