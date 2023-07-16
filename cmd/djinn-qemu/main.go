@@ -40,7 +40,8 @@ func run(ctx context.Context, args []string) error {
 
 	if len(args) == 0 {
 		fmt.Fprintf(os.Stderr, "usage: %s [-n namespace] [-u user] [-t timeout] [-v] <image>\n", argv0)
-		return errors.New("")
+		os.Exit(1)
+		return nil
 	}
 
 	name := filepath.Join("_base", "qemu", "x86_64", args[0])
