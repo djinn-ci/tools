@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/andrewpillar/fs v0.0.0-20230416204702-a009058fc080 // indirect
+	github.com/andrewpillar/fs v0.0.0-20230505194115-11f5fcb3ec95 // indirect
 	github.com/andrewpillar/webutil/v2 v2.2.1 // indirect
 	github.com/go-redis/redis v6.15.7+incompatible // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
